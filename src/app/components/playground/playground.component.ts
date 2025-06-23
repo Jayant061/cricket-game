@@ -46,6 +46,9 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
 
   ngOnInit(): void {
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
+    setTimeout(()=>{
+      window.alert("Use 'P' to play or pause the game. Use 'Enter' or 'SpaceBar' to hit the ball. And use 'R' to run or retreat");
+    },1000);
   }
 
   private handleKeyDown(event: KeyboardEvent) {
