@@ -1,6 +1,6 @@
 <h4>Actions</h4>
 <div class="btns">
-    <button>Play</button>
-    <button>Hit ball</button>
-    <button>Run</button>
+    <button (click)="play()()">{{gamePlayService.isGamePaused()?"Play":"Pause"}}</button>
+    <button (click)="bat()()">Hit ball</button>
+    <button (click)="run()()">{{(runningStatus()==='none'|| runningStatus()==='retreat')?'Run':'Retreat'}}</button>
 </div>

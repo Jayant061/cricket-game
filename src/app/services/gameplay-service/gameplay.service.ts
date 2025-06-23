@@ -119,6 +119,6 @@ export class GameplayService {
   }
 
   public boundry(run:6|4){
-    this.screenMessage.set(run===6?'Six!':'Four')
+    this.screenMessage.set(run===6?'Six!':'Four!')
   }
 }

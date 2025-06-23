@@ -1,7 +1,15 @@
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ScoreCardsComponent } from '../score-cards/score-cards.component';
 import { GameplayService } from '../../services/gameplay-service/gameplay.service';
 import getPlayers, { IPlayerPosition } from '../../filedersPosition';
+import { ActionsComponent } from '../../actions/actions.component';
 
 interface ICoord {
   x: number;
@@ -9,11 +17,11 @@ interface ICoord {
 }
 @Component({
   selector: 'app-playground',
-  imports: [ScoreCardsComponent],
+  imports: [ScoreCardsComponent, ActionsComponent],
   templateUrl: './playground.component.html',
   styleUrl: './playground.component.scss',
 })
-export class PlaygroundComponent implements OnInit, OnDestroy{
+export class PlaygroundComponent implements OnInit, OnDestroy {
   public gamePlayService = inject(GameplayService);
   public groundRadius = signal<number>(450);
   public viewBoxDimension = signal<string>('');
@@ -23,6 +31,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
   public wicketFallEnd = signal<'' | WicketEnd>('');
   public ballCoord = signal<ICoord>(defaultBallCoord);
   public isBatHitted = signal<boolean>(false);
+  public readonly isBallFlying = signal<boolean>(false); // is ball after hit
   // public isNextBallReady = signal<boolean>(true);
   public ballThrowIntervalToken = signal<number>(0);
   public isBallThrown = signal<boolean>(false);
@@ -30,25 +39,32 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
   private readonly runningIntervalTokens = signal<number[]>([]);
   private readonly batsmanRunningIntervalToken = signal<number>(0);
   private readonly isWicketFellInCurrentDelivery = signal<boolean>(false);
+  public isGameBeingPlayedInNonDesktopDevice = signal<boolean>(false);
+  public showActionSection = signal<boolean>(false);
 
-  constructor(){
-    effect(()=>{
+  constructor() {
+    let timeout: number = 0;
+    effect(() => {
       const message = this.gamePlayService.screenMessage().trim();
-      if(message){
-        const timeout = setTimeout(()=>{
+      if (message) {
+        timeout = window.setTimeout(() => {
           this.gamePlayService.screenMessage.set('');
           clearTimeout(timeout);
-        },1500);
+        }, 1500);
       }
-
-    })
+    });
   }
 
   ngOnInit(): void {
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
-    setTimeout(()=>{
-      window.alert("Use 'P' to play or pause the game. Use 'Enter' or 'SpaceBar' to hit the ball. And use 'R' to run or retreat");
-    },1000);
+    setTimeout(() => {
+      if (window.innerWidth<=750) {
+        this.showActionSection.set(true);
+      }
+      window.alert(
+        "Use 'P' to play or pause the game. \n Use 'Enter' or 'SpaceBar' to hit the ball.\n And use 'R' to run or retreat."
+      );
+    }, 1000);
   }
 
   private handleKeyDown(event: KeyboardEvent) {
@@ -57,64 +73,74 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
     // key R is for Run or Retreat game
     // key space or Enter is for hit the ball
     if (key === 'p') {
-      this.gamePlayService.isGamePaused.update((prev) => !prev);
-      if(this.gamePlayService.isGamePaused()){
-        this.runningIntervalTokens().forEach(i=>{
-          clearInterval(i);
-        });
-        this.runningIntervalTokens.set([])
-      }
-      this.handleReset(0,false);
+      this.handlePlayPause();
     } else if (key === 'r') {
-      if(!this.gamePlayService.isBatsmanRunningAllowed()) return;
-      this.gamePlayService.batsmanRunningDirection.update((prev) =>
-        prev === 1 ? -1 : 1
-      );
-      if(this.gamePlayService.batsmanRunningType()==='none'|| this.gamePlayService.batsmanRunningType()==='retreat'){
-        this.gamePlayService.batsmanRunningType.set('run');
-      }else{
-        this.gamePlayService.batsmanRunningType.set('retreat');
-      }
-      this.handleRunBatsman();
-    }
-    else if(key==='' || key ==='enter'){
+      this.handleRunning()
+    } else if (key === '' || key === 'enter') {
       this.handleBat();
     }
+  }
+  public handlePlayPause() {
+    this.gamePlayService.isGamePaused.update((prev) => !prev);
+    if (this.gamePlayService.isGamePaused()) {
+      this.runningIntervalTokens().forEach((i) => {
+        clearInterval(i);
+      });
+      this.runningIntervalTokens.set([]);
+    }
+    this.handleReset(0, false);
+  }
 
+  public handleRunning() {
+    if (!this.gamePlayService.isBatsmanRunningAllowed()) return;
+    this.gamePlayService.batsmanRunningDirection.update((prev) =>
+      prev === 1 ? -1 : 1
+    );
+    if (
+      this.gamePlayService.batsmanRunningType() === 'none' ||
+      this.gamePlayService.batsmanRunningType() === 'retreat'
+    ) {
+      this.gamePlayService.batsmanRunningType.set('run');
+    } else {
+      this.gamePlayService.batsmanRunningType.set('retreat');
+    }
+    this.handleRunBatsman();
   }
 
   public throwBall() {
-    if (this.gamePlayService.isGamePaused()){
+    if (this.gamePlayService.isGamePaused()) {
       clearInterval(this.ballThrowIntervalToken());
       return;
-    };
+    }
     // pitch length = 260
     const ballSpeed = 5; // 5 units per 20ms
     const bowlerSpeed = 4;
-    this.ballThrowIntervalToken.set(window.setInterval(() => {
-      if (this.ballCoord().y >= 150) {
-        clearInterval(this.ballThrowIntervalToken());
-        this.fallOfWicket();
-        this.gamePlayService.screenMessage.set("Bowled")
-      }
-      // bowler runing
-      // bowler throw ball when reaches crease ie -135;
-      const bowlerCoord = this.gamePlayService.fieldersPos()[0];
-      if (bowlerCoord.y < -135) {
-        if (this.isBallThrown()) {
-          this.isBallThrown.set(false);
+    this.ballThrowIntervalToken.set(
+      window.setInterval(() => {
+        if (this.ballCoord().y >= 150) {
+          clearInterval(this.ballThrowIntervalToken());
+          this.fallOfWicket();
+          this.gamePlayService.screenMessage.set('Bowled');
         }
-        bowlerCoord.y += bowlerSpeed;
-      } else {
-        if (!this.isBallThrown()) {
-          this.isBallThrown.set(true);
+        // bowler runing
+        // bowler throw ball when reaches crease ie -135;
+        const bowlerCoord = this.gamePlayService.fieldersPos()[0];
+        if (bowlerCoord.y < -135) {
+          if (this.isBallThrown()) {
+            this.isBallThrown.set(false);
+          }
+          bowlerCoord.y += bowlerSpeed;
+        } else {
+          if (!this.isBallThrown()) {
+            this.isBallThrown.set(true);
+          }
+          const { y } = this.ballCoord();
+          const newY = y + ballSpeed;
+          const newX = (150 - newY) / 28;
+          this.ballCoord.set({ x: newX, y: newY });
         }
-        const { y } = this.ballCoord();
-        const newY = y + ballSpeed;
-        const newX = (150 - newY) / 28;
-        this.ballCoord.set({ x: newX, y: newY });
-      }
-    }, 20));
+      }, 20)
+    );
   }
 
   public fallOfWicket(end: WicketEnd = 'striker') {
@@ -128,7 +154,6 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
     let deviation = 1;
     const interval = window.setInterval(() => {
       if (deviation === maxDeviation) {
-        console.log("first")
         clearInterval(interval);
         this.handleReset(1500);
         return;
@@ -152,7 +177,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
       this.stumpsPosition.set(updatesWicketPos);
       deviation++;
     }, 10);
-    this.runningIntervalTokens.update(prev=>[...prev,interval])
+    this.runningIntervalTokens.update((prev) => [...prev, interval]);
   }
 
   public handleBat() {
@@ -173,7 +198,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
     // bat range is 80 - 130 in y
     // radius of ground is 450 unit
 
-    if (this.ballCoord().y >= 80 && this.ballCoord().y <= 130) {
+    if (this.ballCoord().y >= 80 && this.ballCoord().y < 150) {
       this.gamePlayService.isBatsmanRunningAllowed.set(true);
       clearInterval(this.ballThrowIntervalToken());
     } else {
@@ -182,13 +207,13 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
     // Below algorthm is for ball trajectory and fielder movement towards the ball
     const slope = this.gamePlayService.getBallPath();
     const direction = Math.floor(Math.random() * 100);
-    const directionCoefficient = direction>50 ? -1 : 1;
+    const directionCoefficient = direction > 50 ? -1 : 1;
     const C = this.ballCoord().y;
     // ballSpeed  ranging from 4 to 8 unit per 20 ms
     // 3 to 5 considered dropped (grounded) and above considered as in air
-    const ballSpeed = Math.floor(Math.random() * 4) + 4;
-    const flyingBallMinSpeed = 6;
-    const flyingBallMaxSpeed = 7;
+    const ballSpeeds: number[] = [3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 7, 8];
+    const ballSpeed = ballSpeeds[Math.floor(Math.random() * ballSpeeds.length)];
+    const flyingBallSpeed = ballSpeeds[ballSpeeds.length - 2];
     const fielderSpeed = 2;
     const R = 450; // radius of ground
     this.gamePlayService.getNearestPlayerToBallTrajectory(
@@ -215,10 +240,10 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
         clearInterval(interval);
         this.handleRunBatsman(true);
         this.gamePlayService.isBatsmanRunningAllowed.set(false);
-        this.gamePlayService.boundry(
-          ballSpeed >= flyingBallMinSpeed ? 6 : 4,
+        this.gamePlayService.boundry(ballSpeed >= flyingBallSpeed ? 6 : 4);
+        this.runScoredInCurrentDelivery.set(
+          ballSpeed >= flyingBallSpeed ? 6 : 4
         );
-        this.runScoredInCurrentDelivery.set(ballSpeed >= flyingBallMinSpeed ? 6 : 4)
         this.handleReset();
       }
       // if fielder caught the ball
@@ -228,12 +253,10 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
       ) {
         clearInterval(interval);
         //checking out as per ballSpeed
-        if (ballSpeed >= flyingBallMaxSpeed) {
-          this.gamePlayService.handleOut(
-            'Catch Out!',
-          );
+        if (ballSpeed >= flyingBallSpeed) {
+          this.gamePlayService.handleOut('Catch Out!');
           this.isWicketFellInCurrentDelivery.set(true);
-          this.handleReset()
+          this.handleReset();
         } else {
           const timeout = setTimeout(() => {
             this.throwBallAtStump(this.ballCoord());
@@ -253,7 +276,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
         activePlayerIndex
       );
     }, 20);
-    this.runningIntervalTokens.update(prev=>[...prev,interval])
+    this.runningIntervalTokens.update((prev) => [...prev, interval]);
   }
 
   public getBailsClassName(index: number): string {
@@ -314,13 +337,18 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
     this.gamePlayService.fieldersPos.set([...playersCoords]);
   }
 
-  private handleReset(timeOutdration: number = 1000,countBall:boolean=true) {
-    if(countBall){
-      this.gamePlayService.totalBallFaced.update(prev=>prev+1);
+  private handleReset(
+    timeOutdration: number = 1000,
+    countBall: boolean = true
+  ) {
+    if (countBall) {
+      this.gamePlayService.totalBallFaced.update((prev) => prev + 1);
     }
-    this.gamePlayService.totalRunsScored.update(prev=>prev+this.runScoredInCurrentDelivery());
-    if(this.isWicketFellInCurrentDelivery()){
-      this.gamePlayService.wicketFallen.update(prev=>prev+1);
+    this.gamePlayService.totalRunsScored.update(
+      (prev) => prev + this.runScoredInCurrentDelivery()
+    );
+    if (this.isWicketFellInCurrentDelivery()) {
+      this.gamePlayService.wicketFallen.update((prev) => prev + 1);
     }
     const timeout = setTimeout(() => {
       this.ballCoord.set(defaultBallCoord);
@@ -330,13 +358,13 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
       this.isBatHitted.set(false);
       this.gamePlayService.fieldersPos.set(getPlayers());
       this.isBallThrown.set(false);
-      this.runScoredInCurrentDelivery.set(0)
+      this.runScoredInCurrentDelivery.set(0);
       this.batsmanCoord.set(defaultBatsmenCoord);
-      this.isWicketFellInCurrentDelivery.set(false)
-      const thorowBallWaitTimeout = setTimeout(()=>{
+      this.isWicketFellInCurrentDelivery.set(false);
+      const thorowBallWaitTimeout = setTimeout(() => {
         this.throwBall();
         clearTimeout(thorowBallWaitTimeout);
-      },1000)
+      }, 1000);
       clearTimeout(timeout);
     }, timeOutdration);
   }
@@ -365,50 +393,51 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
       if (newX === x && newY === y) {
         clearInterval(interval);
         this.isBallThrown.set(false);
-        if (this.gamePlayService.batsmanRunningType() !=='none') {
+        if (this.gamePlayService.batsmanRunningType() !== 'none') {
           this.fallOfWicket(y < 0 ? 'non-striker' : 'striker');
-          this.gamePlayService.screenMessage.set('Run Out')
-        }else{
+          this.gamePlayService.screenMessage.set('Run Out');
+        } else {
           this.gamePlayService.isBatsmanRunningAllowed.set(false);
-          this.handleReset()
+          this.handleReset();
         }
       }
-    },20);
-    this.runningIntervalTokens.update(prev=>[...prev,interval])
+    }, 20);
+    this.runningIntervalTokens.update((prev) => [...prev, interval]);
   }
 
-  private handleRunBatsman(abortRun:boolean = false) {
-
-    if(abortRun){
+  private handleRunBatsman(abortRun: boolean = false) {
+    if (abortRun) {
       clearInterval(this.batsmanRunningIntervalToken());
       return;
     }
     const batsmanRunningSpeed = 4;
     const interval = window.setInterval(() => {
-      if(!this.gamePlayService.isBatsmanRunningAllowed()) return;
+      if (!this.gamePlayService.isBatsmanRunningAllowed()) return;
       this.batsmanCoord.update((prev) => ({
         ...prev,
-        y: prev.y + this.gamePlayService.batsmanRunningDirection() * batsmanRunningSpeed,
+        y:
+          prev.y +
+          this.gamePlayService.batsmanRunningDirection() * batsmanRunningSpeed,
       }));
       if (Math.abs(this.batsmanCoord().y) > 130) {
-        if(this.gamePlayService.batsmanRunningType()==='run'){
-          this.runScoredInCurrentDelivery.update(prev=>prev+1);
+        if (this.gamePlayService.batsmanRunningType() === 'run') {
+          this.runScoredInCurrentDelivery.update((prev) => prev + 1);
         }
         this.gamePlayService.batsmanRunningType.set('none');
         this.batsmanCoord.set(defaultBatsmenCoord);
-        this.gamePlayService.batsmanRunningDirection.set(1)
+        this.gamePlayService.batsmanRunningDirection.set(1);
         clearInterval(interval);
       }
     }, 20);
     this.batsmanRunningIntervalToken.set(interval);
-    this.runningIntervalTokens.update(prev=>[...prev,interval]);
+    this.runningIntervalTokens.update((prev) => [...prev, interval]);
   }
 
   ngOnDestroy(): void {
-      window.removeEventListener('keydown', this.handleKeyDown.bind(this));
-      this.runningIntervalTokens().forEach((i)=>{
-        clearInterval(i);
-      });
+    window.removeEventListener('keydown', this.handleKeyDown.bind(this));
+    this.runningIntervalTokens().forEach((i) => {
+      clearInterval(i);
+    });
   }
 }
 
@@ -417,7 +446,7 @@ const defaultBallCoord: ICoord = {
   y: -120,
 };
 
-const defaultBatsmenCoord:ICoord = { x: -6, y: 130 }
+const defaultBatsmenCoord: ICoord = { x: -6, y: 130 };
 
 interface IWicketPos {
   x1: number;

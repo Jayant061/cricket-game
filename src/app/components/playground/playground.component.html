@@ -67,19 +67,23 @@
     />
 
     <!-- ball  center is x,y so top lefdt point will be x-w/2 y-h/2-->
-     <circle
+    <circle
       [attr.cx]="ballCoord().x"
       [attr.cy]="ballCoord().y"
       [attr.r]="6"
-      class="ball {{isBallThrown()?'active':''}}"
+      class="ball {{ isBallThrown() ? 'active ' : ' ' }} {{
+        isBallFlying() ? 'in-air' : ''
+      }}"
       [style.visibility]="isBallThrown() ? 'visible' : 'hidden'"
-      style="fill: #6c696967; filter:url(#shadow);"
-      />
+      style="fill: #6c696967; filter: url(#shadow)"
+    />
     <circle
       [attr.cx]="ballCoord().x"
       [attr.cy]="ballCoord().y"
       [attr.r]="5"
-      class="ball {{isBallThrown()?'active':''}}"
+      class="ball {{ isBallThrown() ? 'active ' : ' ' }} {{
+        isBallFlying() ? 'in-air' : ''
+      }}"
       fill="#fff"
       [style.visibility]="isBallThrown() ? 'visible' : 'hidden'"
     />
@@ -117,7 +121,18 @@
     />
     }
   </svg>
-  <div class="modal {{ gamePlayService.screenMessage() !==''?'active':'' }}">
-    <span class="result">{{gamePlayService.screenMessage()}}</span>
+  <div
+    class="modal {{ gamePlayService.screenMessage() !== '' ? 'active' : '' }}"
+  >
+    <span class="result">{{ gamePlayService.screenMessage() }}</span>
   </div>
 </div>
+@if(showActionSection()){
+<app-actions
+  class="non-game-area"
+  [play]="handlePlayPause.bind(this)"
+  [bat]="handleBat.bind(this)"
+  [run]="handleRunning.bind(this)"
+  [runningStatus]="gamePlayService.batsmanRunningType()"
+></app-actions>
+}
