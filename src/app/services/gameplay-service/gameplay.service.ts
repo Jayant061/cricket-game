@@ -84,16 +84,20 @@ export class GameplayService {
         x,
         y
       );
+
+      //calculating foot of perpendicular
+
+      const xf = (slope * (y - C) + x) / (slope * slope + 1);
+      const yf = slope * xf + C;
+      if(Math.abs(xf)<=60 && Math.abs(yf)<=150){
+        return;
+      }
       if (currentFielderDistance < distance) {
         distance = currentFielderDistance;
         this.nearsetPlayerToBallTrajectory.set(index);
+        this.BallAndPlayerContactPoint.set({ x: xf, y: yf });
       }
     });
-    //calculating foot of perpendicular
-    const { x, y } = this.fieldersPos()[this.nearsetPlayerToBallTrajectory()];
-    const xf = (slope * (y - C) + x) / (slope * slope + 1);
-    const yf = slope * xf + C;
-    this.BallAndPlayerContactPoint.set({ x: xf, y: yf });
 
     return this.nearsetPlayerToBallTrajectory();
   }
