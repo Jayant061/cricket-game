@@ -1,0 +1,64 @@
+:host{
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0.5rem;
+    .heading{
+        font-size: 2rem;
+        line-height: 2.5rem;
+        font-weight: 600;
+        color: #fff;
+        text-decoration: underline;
+    }
+    .score{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        span{
+            font-weight: 600;
+            font-size: 1.5rem;
+            line-height: 1.75rem;
+            color: #ffb42a;
+        }
+    }
+    .fall-of-wickets{
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+        span{
+            font-size: 2rem;
+            line-height: 2.5rem;
+            font-weight: 600;
+            color: white;
+        }
+        table{
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            border-collapse: collapse;
+            tr{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                th,td{
+                    width: 30%;
+                    flex-grow: 1;
+                    border: 1px solid #ffb42a;
+                    display: flex;
+                    justify-content: center;
+                }
+                th{
+                    font-weight: 600;
+                    font-size: 1rem;
+                    line-height: 1.25rem;
+                }
+            }
+        }
+    }
+}

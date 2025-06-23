@@ -1,0 +1,27 @@
+<h4 class="heading">Your Score Card</h4>
+
+<div class="score">
+  <span class="run">{{ runs }} / {{ wicekts }}</span>
+  <span class="balls">({{overs}}.{{deliveries}})</span>
+</div>
+<div class="fall-of-wickets" [style.display]="fallOfWickets.length ===0?'none':''">
+    <span class="head">Fall of Wickets</span>
+    <table>
+        <thead>
+            <tr>
+                <th>Wicket Number</th>
+                <th>Runs</th>
+                <th>Overs</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (item of fallOfWickets; track $index) {
+                <tr>
+                    <td>{{item.wicket}}</td>
+                    <td>{{item.runs}}</td>
+                    <td>{{item.overs}}</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
