@@ -181,8 +181,8 @@ export class PlaygroundComponent implements OnInit, OnDestroy{
     }
     // Below algorthm is for ball trajectory and fielder movement towards the ball
     const slope = this.gamePlayService.getBallPath();
-    const direction = Math.floor(Math.random() * 2);
-    const directionCoefficient = direction ? -1 : 1;
+    const direction = Math.floor(Math.random() * 100);
+    const directionCoefficient = direction>50 ? -1 : 1;
     const C = this.ballCoord().y;
     // ballSpeed  ranging from 4 to 8 unit per 20 ms
     // 3 to 5 considered dropped (grounded) and above considered as in air
