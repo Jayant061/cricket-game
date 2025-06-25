@@ -212,7 +212,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     const ballSpeeds: number[] = [3, 3.2, 3.4, 3.6, 3.8,4,4.2];
     let ballSpeed = ballSpeeds[Math.floor(Math.random() * ballSpeeds.length)];
     // if ball connect with bat at bat's sweet soopt
-    if(this.ballCoord().y>=95 && this.ballCoord().y<115){
+    if(this.ballCoord().y>=95 && this.ballCoord().y<110){
       ballSpeed = 8;
     }
     const flyingBallSpeed = ballSpeeds[ballSpeeds.length - 2];
