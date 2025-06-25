@@ -209,10 +209,12 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     const direction = Math.floor(Math.random() * 100);
     const directionCoefficient = direction > 50 ? -1 : 1;
     const C = this.ballCoord().y;
-    // ballSpeed  ranging from 4 to 8 unit per 20 ms
-    // 3 to 5 considered dropped (grounded) and above considered as in air
-    const ballSpeeds: number[] = [3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4, 7, 8];
-    const ballSpeed = ballSpeeds[Math.floor(Math.random() * ballSpeeds.length)];
+    const ballSpeeds: number[] = [3, 3.2, 3.4, 3.6, 3.8,4,4.2];
+    let ballSpeed = ballSpeeds[Math.floor(Math.random() * ballSpeeds.length)];
+    // if ball connect with bat at bat's sweet soopt
+    if(this.ballCoord().y>=95 && this.ballCoord().y<115){
+      ballSpeed = 8;
+    }
     const flyingBallSpeed = ballSpeeds[ballSpeeds.length - 2];
     const fielderSpeed = 2;
     const R = 450; // radius of ground
