@@ -29,9 +29,11 @@ export class GameplayService {
         ]);
       }
       if (this.wicketFallen() === 10) {
-        this.screenMessage.set('Game Over And Paused');
+        this.screenMessage.set('Game Over');
         this.isGamePaused.set(true);
-        window.alert('press "P" to start new Game');
+        setTimeout(() => {
+          window.alert('press "P" to start new Game');
+        },100);
       }
     });
   }
