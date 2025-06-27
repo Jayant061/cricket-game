@@ -195,10 +195,10 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     }, 1000);
 
     // if bats hits the ball or ball is in radar of bat. Assuming bat coverage is 50 unit for easy 40 for medium and 35 for Hard
-    // bat range is 80 - 130 in y
+    // bat range is 90 - 130 in y
     // radius of ground is 450 unit
 
-    if (this.ballCoord().y >= 80 && this.ballCoord().y < 150) {
+    if (this.ballCoord().y >= 90 && this.ballCoord().y < 150) {
       this.gamePlayService.isBatsmanRunningAllowed.set(true);
       clearInterval(this.ballThrowIntervalToken());
     } else {
@@ -212,10 +212,10 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     const ballSpeeds: number[] = [3, 3.2, 3.4, 3.6, 3.8,4,4.2];
     let ballSpeed = ballSpeeds[Math.floor(Math.random() * ballSpeeds.length)];
     // if ball connect with bat at bat's sweet soopt
-    if(this.ballCoord().y>=95 && this.ballCoord().y<110){
+    if(this.ballCoord().y>=100 && this.ballCoord().y<=110){
       ballSpeed = 8;
     }
-    const flyingBallSpeed = ballSpeeds[ballSpeeds.length - 2];
+    const flyingBallSpeed = 8;
     const fielderSpeed = 2;
     const R = 450; // radius of ground
     this.gamePlayService.getNearestPlayerToBallTrajectory(
