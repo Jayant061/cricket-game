@@ -58,7 +58,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     setTimeout(() => {
-      if (window.innerWidth<=750) {
+      if (window.innerWidth <= 750) {
         this.showActionSection.set(true);
       }
       window.alert(
@@ -75,7 +75,7 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     if (key === 'p') {
       this.handlePlayPause();
     } else if (key === 'r') {
-      this.handleRunning()
+      this.handleRunning();
     } else if (key === '' || key === 'enter') {
       this.handleBat();
     }
@@ -87,7 +87,10 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
         clearInterval(i);
       });
       this.runningIntervalTokens.set([]);
+    } else if (this.gamePlayService.wicketFallen() === 10) {
+      this.gamePlayService.handleGameOver();
     }
+
     this.handleReset(0, false);
   }
 
@@ -209,10 +212,10 @@ export class PlaygroundComponent implements OnInit, OnDestroy {
     const direction = Math.floor(Math.random() * 100);
     const directionCoefficient = direction > 50 ? -1 : 1;
     const C = this.ballCoord().y;
-    const ballSpeeds: number[] = [3, 3.2, 3.4, 3.6, 3.8,4,4.2];
+    const ballSpeeds: number[] = [3, 3.2, 3.4, 3.6, 3.8, 4, 4.2];
     let ballSpeed = ballSpeeds[Math.floor(Math.random() * ballSpeeds.length)];
     // if ball connect with bat at bat's sweet soopt
-    if(this.ballCoord().y>=100 && this.ballCoord().y<=110){
+    if (this.ballCoord().y >= 100 && this.ballCoord().y <= 110) {
       ballSpeed = 8;
     }
     const flyingBallSpeed = 8;

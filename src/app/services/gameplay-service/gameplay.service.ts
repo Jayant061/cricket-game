@@ -1,31 +1,40 @@
 import { effect, Injectable, signal } from '@angular/core';
-import getPlayers, { IFallOfWicket, IPlayerPosition } from '../../filedersPosition';
+import getPlayers, {
+  IFallOfWicket,
+  IPlayerPosition,
+} from '../../filedersPosition';
 
 @Injectable({
   providedIn: 'root',
 })
 export class GameplayService {
-  constructor(){
-    let currentWicketStored=  0;
-    effect(()=>{
-      if(this.wicketFallen() !== currentWicketStored && this.wicketFallen() !==0 ){
-        currentWicketStored = this.wicketFallen()
-        const over = `${Math.floor(this.totalBallFaced()/6)}.${this.totalBallFaced()%6}`;
-        this.fallOfWickets.update(prev=>([...prev,{overs:over,runs:this.totalRunsScored(),wicket:this.wicketFallen()}]))
+  constructor() {
+    let currentWicketStored = 0;
+    effect(() => {
+      if (
+        this.wicketFallen() !== currentWicketStored &&
+        this.wicketFallen() !== 0
+      ) {
+        currentWicketStored = this.wicketFallen();
+        const over = `${Math.floor(this.totalBallFaced() / 6)}.${
+          this.totalBallFaced() % 6
+        }`;
+        this.fallOfWickets.update((prev) => [
+          ...prev,
+          {
+            overs: over,
+            runs: this.totalRunsScored(),
+            wicket: this.wicketFallen(),
+          },
+        ]);
       }
-      if(this.wicketFallen()===10){
-        this.screenMessage.set('Game Over');
+      if (this.wicketFallen() === 10) {
+        this.screenMessage.set('Game Over And Paused');
         this.isGamePaused.set(true);
-        const timeout = setTimeout(()=>{
-          this.wicketFallen.set(0);
-          this.totalBallFaced.set(0);
-          this.totalRunsScored.set(0);
-          this.fallOfWickets.set([]);
-          clearTimeout(timeout)
-        },10000);
+        window.alert('press "P" to start new Game');
       }
-    })
-    }
+    });
+  }
   public derivedBallPath = signal<number>(0);
   public fieldersPos = signal<IPlayerPosition[]>(getPlayers());
   public nearsetPlayerToBallTrajectory = signal<number>(0);
@@ -38,8 +47,8 @@ export class GameplayService {
   public totalBallFaced = signal<number>(0);
   public fallOfWickets = signal<IFallOfWicket[]>([]);
   public isBatsmanRunningAllowed = signal<boolean>(false);
-  public batsmanRunningType= signal<'run'|'retreat'|'none'>('none')
-  public batsmanRunningDirection = signal<-1|1>(1);
+  public batsmanRunningType = signal<'run' | 'retreat' | 'none'>('none');
+  public batsmanRunningDirection = signal<-1 | 1>(1);
   public isGamePaused = signal<boolean>(true);
   public screenMessage = signal<string>('');
 
@@ -61,6 +70,13 @@ export class GameplayService {
     const randomIndex = Math.floor(Math.random() * this.slopes.length);
     this.derivedBallPath.set(this.slopes[randomIndex]);
     return this.derivedBallPath();
+  }
+
+  public handleGameOver() {
+    this.wicketFallen.set(0);
+    this.totalBallFaced.set(0);
+    this.totalRunsScored.set(0);
+    this.fallOfWickets.set([]);
   }
 
   public getNearestPlayerToBallTrajectory(
@@ -89,7 +105,7 @@ export class GameplayService {
 
       const xf = (slope * (y - C) + x) / (slope * slope + 1);
       const yf = slope * xf + C;
-      if(Math.abs(xf)<=60 && Math.abs(yf)<=150){
+      if (Math.abs(xf) <= 60 && Math.abs(yf) <= 150) {
         return;
       }
       if (currentFielderDistance < distance) {
@@ -118,11 +134,11 @@ export class GameplayService {
     );
   }
 
-  public handleOut(outType:string){
+  public handleOut(outType: string) {
     this.screenMessage.set(outType);
   }
 
-  public boundry(run:6|4){
-    this.screenMessage.set(run===6?'Six!':'Four!')
+  public boundry(run: 6 | 4) {
+    this.screenMessage.set(run === 6 ? 'Six!' : 'Four!');
   }
 }
