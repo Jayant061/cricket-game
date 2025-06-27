@@ -22,7 +22,7 @@ export class GameplayService {
           this.totalRunsScored.set(0);
           this.fallOfWickets.set([]);
           clearTimeout(timeout)
-        },1000);
+        },10000);
       }
     })
     }
